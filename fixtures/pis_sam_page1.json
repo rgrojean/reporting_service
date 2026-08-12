@@ -1,0 +1,54 @@
+{
+  "data": [
+    {
+      "patientId": "300001",
+      "name": "Nguyen, Lan",
+      "dob": "12/01/1990",
+      "gender": "F",
+      "ssn": "333-44-5555",
+      "phone": "615-555-0100",
+      "email": "lnguyen@example.com",
+      "address": {
+        "line1": "1 Main St",
+        "city": "Nashville",
+        "state": "TN",
+        "zip": "37203"
+      }
+    },
+    {
+      "patientId": "300002",
+      "name": "Kim, David",
+      "dob": "03/20/1975",
+      "gender": "M",
+      "ssn": "444-55-6666",
+      "phone": "615-555-0101",
+      "email": "dkim@example.com",
+      "address": {
+        "line1": "2 Broad St",
+        "city": "Nashville",
+        "state": "TN",
+        "zip": "37203"
+      }
+    },
+    {
+      "patientId": "300003",
+      "name": "Lopez, Ana",
+      "dob": "09/09/1952",
+      "gender": "F",
+      "ssn": "555-66-7777",
+      "phone": "615-555-0102",
+      "email": null,
+      "address": {
+        "line1": "3 Church St",
+        "city": "Nashville",
+        "state": "TN",
+        "zip": "37206"
+      }
+    }
+  ],
+  "meta": {
+    "total": 3,
+    "page": 1,
+    "nextPage": null
+  }
+}

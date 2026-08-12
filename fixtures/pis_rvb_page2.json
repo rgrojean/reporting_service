@@ -1,0 +1,39 @@
+{
+  "data": [
+    {
+      "patientId": "200112",
+      "name": "Hayes, Nora",
+      "dob": "01/15/2005",
+      "gender": "F",
+      "ssn": "111-22-3333",
+      "phone": "931-555-0310",
+      "email": "nhayes@example.com",
+      "address": {
+        "line1": "12 Oak Ave",
+        "city": "Clarksville",
+        "state": "TN",
+        "zip": "37040"
+      }
+    },
+    {
+      "patientId": "200113",
+      "name": "Brooks, Henry",
+      "dob": "07/04/1955",
+      "gender": "M",
+      "ssn": "222-33-4444",
+      "phone": "931-555-0311",
+      "email": "hbrooks@example.com",
+      "address": {
+        "line1": "90 Commerce St",
+        "city": "Clarksville",
+        "state": "TN",
+        "zip": "37043"
+      }
+    }
+  ],
+  "meta": {
+    "total": 12,
+    "page": 2,
+    "nextPage": null
+  }
+}

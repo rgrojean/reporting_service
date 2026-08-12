@@ -1,0 +1,4 @@
+# What cron invokes — monthly panel, Monday dashboard cohorts, quarterly extract.
+# 0 6 1 * *   cd /opt/lighthouse && npm run collect:demographics && npm run report:panel
+# 0 6 * * 1   cd /opt/lighthouse && npm run report:cohorts
+# 0 6 1 1,4,7,10 *  cd /opt/lighthouse && npm run report:quarterly
