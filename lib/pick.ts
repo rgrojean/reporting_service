@@ -6,13 +6,32 @@ export type ProjectedPatient = {
   address: { zip: string };
 };
 
+const RIVERBEND_MRN = 'urn:riverbend:mrn';
+
+function riverbendMrn(record: Record<string, unknown>): string | null {
+  const identifiers = record.identifier;
+  if (!Array.isArray(identifiers)) return null;
+  for (const entry of identifiers) {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      (entry as { system?: unknown }).system === RIVERBEND_MRN &&
+      (entry as { value?: unknown }).value != null
+    ) {
+      return String((entry as { value: unknown }).value);
+    }
+  }
+  return null;
+}
+
 export function pick(record: Record<string, unknown>): ProjectedPatient | null {
   const address = record.address as { zip?: unknown } | undefined;
-  if (record.patientId == null || record.gender == null || record.dob == null || address?.zip == null) {
+  const patientId = riverbendMrn(record);
+  if (patientId == null || record.gender == null || record.dob == null || address?.zip == null) {
     return null;
   }
   return {
-    patientId: String(record.patientId),
+    patientId,
     gender: String(record.gender),
     dob: String(record.dob),
     address: { zip: String(address.zip) },

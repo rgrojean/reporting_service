@@ -40,7 +40,7 @@ GET /v2/patients?facility=RVB&page=1..N
 GET /v2/patients?facility=SAM&page=1..N
 ```
 
-From each record it projects exactly four things into the snapshot: `patientId` (carried only as a dedup key within the pull — it appears in no mart and no report), `gender`, `dob` (bucketed immediately into age bands at aggregation time), and `address.zip` (grouped to ZIP3 in all outputs). Everything else in the payload is dropped at projection (`pick()` with an explicit field list) — a deliberate choice from the 2022 privacy review: Lighthouse's snapshots were classified as a low-sensitivity store precisely because the projection keeps identifiers and contact data out, and the team wants to keep that classification. It also reads the roster response's paging envelope (`meta.total`, `meta.nextPage`) both for iteration and as the numerator of the panel-size reports themselves.
+From each record it projects exactly four things into the snapshot: a dedup key derived from the Riverbend-namespaced entry in PIS v3's `identifier[]` array (stored internally as `patientId` — it appears in no mart and no report), `gender`, `dob` (bucketed immediately into age bands at aggregation time), and `address.zip` (grouped to ZIP3 in all outputs). PIS v3 replaces the flat `name` string with `given` and `family` and removes `ssn`; those fields, along with phone, email, and street address, are dropped at projection (`pick()` with an explicit field list) — a deliberate choice from the 2022 privacy review: Lighthouse's snapshots were classified as a low-sensitivity store precisely because the projection keeps identifiers and contact data out, and the team wants to keep that classification. It also reads the roster response's paging envelope (`meta.total`, `meta.nextPage`) both for iteration and as the numerator of the panel-size reports themselves.
 
 The consumption style is plain `fetch` + the explicit projection — no generated client, no schema validation beyond "the four fields I picked exist," enforced by a small guard that fails the collector run loudly if any picked field comes back missing on more than 0.5% of records (a threshold chosen after the 2021 incident: a trickle of nulls is data quality, a flood is a contract change, and the run should stop rather than publish).
 
@@ -60,11 +60,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
 {
   "data": [
     {
-      "patientId": "200104",
-      "name": "Williams, Sarah",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200104" }],
+      "given": ["Sarah"],
+      "family": "Williams",
       "dob": "09/28/1987",
       "gender": "F",
-      "ssn": "678-90-1234",
       "phone": "931-555-0144",
       "email": "swilliams.sam@example.com",
       "address": {
@@ -75,11 +75,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
       }
     },
     {
-      "patientId": "550001",
-      "name": "Patel, Ravi",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "550001" }],
+      "given": ["Ravi"],
+      "family": "Patel",
       "dob": "04/17/1968",
       "gender": "M",
-      "ssn": "890-12-3456",
       "phone": "931-555-0177",
       "email": "rpatel@example.com",
       "address": {
@@ -90,11 +90,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
       }
     },
     {
-      "patientId": "550002",
-      "name": "Ortiz, Diego",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "550002" }],
+      "given": ["Diego"],
+      "family": "Ortiz",
       "dob": "02/11/1995",
       "gender": "M",
-      "ssn": "012-34-5678",
       "phone": "931-555-0166",
       "email": "dortiz@example.com",
       "address": {
@@ -105,11 +105,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
       }
     },
     {
-      "patientId": "200105",
-      "name": "Mitchell, James",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200105" }],
+      "given": ["James"],
+      "family": "Mitchell",
       "dob": "05/22/1966",
       "gender": "M",
-      "ssn": "434-56-7878",
       "phone": "931-555-0301",
       "email": "jmitchell@example.com",
       "address": {
@@ -120,11 +120,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
       }
     },
     {
-      "patientId": "200106",
-      "name": "Turner, Emily",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200106" }],
+      "given": ["Emily"],
+      "family": "Turner",
       "dob": "08/08/1994",
       "gender": "F",
-      "ssn": "545-67-8989",
       "phone": "931-555-0302",
       "email": "eturner@example.com",
       "address": {
@@ -135,11 +135,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
       }
     },
     {
-      "patientId": "200107",
-      "name": "Phillips, Carl",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200107" }],
+      "given": ["Carl"],
+      "family": "Phillips",
       "dob": "11/16/1959",
       "gender": "M",
-      "ssn": "656-78-9090",
       "phone": "931-555-0303",
       "email": null,
       "address": {
@@ -150,11 +150,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
       }
     },
     {
-      "patientId": "200108",
-      "name": "Campbell, Ruth",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200108" }],
+      "given": ["Ruth"],
+      "family": "Campbell",
       "dob": "02/02/1981",
       "gender": "F",
-      "ssn": "767-89-0101",
       "phone": "931-555-0304",
       "email": "rcampbell@example.com",
       "address": {
@@ -165,11 +165,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
       }
     },
     {
-      "patientId": "200109",
-      "name": "Parker, Thomas",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200109" }],
+      "given": ["Thomas"],
+      "family": "Parker",
       "dob": "06/29/1970",
       "gender": "M",
-      "ssn": "878-90-1212",
       "phone": "931-555-0305",
       "email": "tparker@example.com",
       "address": {
@@ -180,11 +180,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
       }
     },
     {
-      "patientId": "200110",
-      "name": "Evans, Gloria",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200110" }],
+      "given": ["Gloria"],
+      "family": "Evans",
       "dob": "10/10/1948",
       "gender": "F",
-      "ssn": "989-01-2323",
       "phone": "931-555-0306",
       "email": "gevans@example.com",
       "address": {
@@ -195,11 +195,11 @@ The quarterly extract is the job with a compliance calendar attached — it runs
       }
     },
     {
-      "patientId": "200111",
-      "name": "Edwards, Frank",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200111" }],
+      "given": ["Frank"],
+      "family": "Edwards",
       "dob": "03/13/1989",
       "gender": "M",
-      "ssn": "090-12-3434",
       "phone": "931-555-0307",
       "email": null,
       "address": {

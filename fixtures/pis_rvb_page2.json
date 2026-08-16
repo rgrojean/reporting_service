@@ -1,11 +1,11 @@
 {
   "data": [
     {
-      "patientId": "200112",
-      "name": "Hayes, Nora",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200112" }],
+      "given": ["Nora"],
+      "family": "Hayes",
       "dob": "01/15/2005",
       "gender": "F",
-      "ssn": "111-22-3333",
       "phone": "931-555-0310",
       "email": "nhayes@example.com",
       "address": {
@@ -16,11 +16,11 @@
       }
     },
     {
-      "patientId": "200113",
-      "name": "Brooks, Henry",
+      "identifier": [{ "system": "urn:riverbend:mrn", "value": "200113" }],
+      "given": ["Henry"],
+      "family": "Brooks",
       "dob": "07/04/1955",
       "gender": "M",
-      "ssn": "222-33-4444",
       "phone": "931-555-0311",
       "email": "hbrooks@example.com",
       "address": {
