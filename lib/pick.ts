@@ -1,4 +1,6 @@
 // Explicit four-field pick — everything else dropped at projection (2022 privacy review).
+export const RIVERBEND_MRN_SYSTEM = 'urn:riverbend:mrn';
+
 export type ProjectedPatient = {
   patientId: string;
   gender: string;
@@ -6,13 +8,22 @@ export type ProjectedPatient = {
   address: { zip: string };
 };
 
+function patientIdFromIdentifiers(record: Record<string, unknown>): string | null {
+  const identifiers = record.identifier as Array<{ system?: unknown; value?: unknown }> | undefined;
+  if (!Array.isArray(identifiers)) return null;
+  const entry = identifiers.find((id) => id.system === RIVERBEND_MRN_SYSTEM);
+  if (entry?.value == null) return null;
+  return String(entry.value);
+}
+
 export function pick(record: Record<string, unknown>): ProjectedPatient | null {
   const address = record.address as { zip?: unknown } | undefined;
-  if (record.patientId == null || record.gender == null || record.dob == null || address?.zip == null) {
+  const patientId = patientIdFromIdentifiers(record);
+  if (patientId == null || record.gender == null || record.dob == null || address?.zip == null) {
     return null;
   }
   return {
-    patientId: String(record.patientId),
+    patientId,
     gender: String(record.gender),
     dob: String(record.dob),
     address: { zip: String(address.zip) },

@@ -52,7 +52,7 @@ describe('collectors/demographics', () => {
     expect(Object.keys(sample.address)).toEqual(['zip']);
     // contact / identity fields must not survive projection
     const blob = JSON.stringify(snap);
-    expect(blob).not.toMatch(/ssn|phone|email|line1|Williams|Sarah/i);
+    expect(blob).not.toMatch(/ssn|phone|email|line1|Williams|Sarah|given|family/i);
   });
 
   test('paginates until nextPage is null', async () => {
@@ -72,10 +72,14 @@ describe('collectors/demographics', () => {
       }
       // 100 records, 1 missing dob → 1% > 0.5%
       const data = Array.from({ length: 100 }, (_, i) => ({
-        patientId: `p${i}`,
+        identifier: [{ system: 'urn:riverbend:mrn', value: `p${i}` }],
+        given: ['Test'],
+        family: 'User',
         gender: 'F',
         dob: i === 0 ? undefined : '01/01/1990',
-        address: { zip: '37040' },
+        phone: '000-000-0000',
+        email: null,
+        address: { line1: '1 Test St', city: 'Test', state: 'TN', zip: '37040' },
       }));
       return { data, meta: { total: 100, page: 1, nextPage: null } };
     };
@@ -94,5 +98,58 @@ describe('collectors/demographics', () => {
       dob: '09/28/1987',
       address: { zip: '37040' },
     });
+  });
+
+  test('pick resolves patientId from identifier[] with urn:riverbend:mrn', () => {
+    const projected = pick({
+      identifier: [
+        { system: 'urn:other:mrn', value: '999999' },
+        { system: 'urn:riverbend:mrn', value: '200104' },
+      ],
+      given: ['Sarah'],
+      family: 'Williams',
+      gender: 'F',
+      dob: '09/28/1987',
+      phone: '000-000-0000',
+      email: null,
+      address: { line1: '1 St', city: 'C', state: 'TN', zip: '37040' },
+    });
+    expect(projected?.patientId).toBe('200104');
+  });
+
+  test('pick returns null when identifier[] lacks the Riverbend system entry', () => {
+    const projected = pick({
+      identifier: [{ system: 'urn:stansgar:mrn', value: '300001' }],
+      given: ['Lan'],
+      family: 'Nguyen',
+      gender: 'F',
+      dob: '12/01/1990',
+      phone: '000-000-0000',
+      email: null,
+      address: { line1: '1 St', city: 'C', state: 'TN', zip: '37203' },
+    });
+    expect(projected).toBeNull();
+  });
+
+  test('dedup suppresses duplicate identifier values across paginated v3 roster pages', async () => {
+    const dupId = '200104';
+    const page1 = load('pis_rvb_page1.json');
+    const page2 = load('pis_rvb_page2.json');
+    const dupRecord = { ...page1.data[0] };
+    const tracking: FetchPage = async (facility, page) => {
+      if (facility === 'SAM') {
+        return { data: [], meta: { total: 0, page: 1, nextPage: null } };
+      }
+      if (page === 1) return page1;
+      return { data: [dupRecord, ...page2.data], meta: { total: 13, page: 2, nextPage: null } };
+    };
+    const { path: snapPath } = await collectDemographics(tracking, {
+      runId: 'test_run_dedup',
+      asOf: '2026-08-01',
+    });
+    const snap = JSON.parse(fs.readFileSync(snapPath, 'utf8'));
+    const ids = snap.facilities[0].records.map((r: { patientId: string }) => r.patientId);
+    expect(ids.filter((id: string) => id === dupId)).toHaveLength(1);
+    expect(snap.facilities[0].records).toHaveLength(12);
   });
 });
