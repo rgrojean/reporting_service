@@ -52,7 +52,7 @@ describe('collectors/demographics', () => {
     expect(Object.keys(sample.address)).toEqual(['zip']);
     // contact / identity fields must not survive projection
     const blob = JSON.stringify(snap);
-    expect(blob).not.toMatch(/ssn|phone|email|line1|Williams|Sarah/i);
+    expect(blob).not.toMatch(/ssn|phone|email|line1|Williams|Sarah|given|family|urn:riverbend/i);
   });
 
   test('paginates until nextPage is null', async () => {
@@ -72,10 +72,14 @@ describe('collectors/demographics', () => {
       }
       // 100 records, 1 missing dob → 1% > 0.5%
       const data = Array.from({ length: 100 }, (_, i) => ({
-        patientId: `p${i}`,
+        identifier: [{ system: 'urn:riverbend:mrn', value: `p${i}` }],
+        given: ['Test'],
+        family: 'User',
         gender: 'F',
         dob: i === 0 ? undefined : '01/01/1990',
-        address: { zip: '37040' },
+        phone: '000-000-0000',
+        email: null,
+        address: { line1: '1 Test St', city: 'Test', state: 'TN', zip: '37040' },
       }));
       return { data, meta: { total: 100, page: 1, nextPage: null } };
     };
@@ -94,5 +98,72 @@ describe('collectors/demographics', () => {
       dob: '09/28/1987',
       address: { zip: '37040' },
     });
+  });
+
+  test('pick() maps urn:riverbend:mrn identifier onto internal patientId and omits given/family', () => {
+    const projected = pick({
+      identifier: [{ system: 'urn:riverbend:mrn', value: '200104' }],
+      given: ['Sarah'],
+      family: 'Williams',
+      gender: 'F',
+      dob: '09/28/1987',
+      address: { zip: '37040' },
+    });
+    expect(projected).toEqual({
+      patientId: '200104',
+      gender: 'F',
+      dob: '09/28/1987',
+      address: { zip: '37040' },
+    });
+    expect(Object.keys(projected!)).toEqual(['patientId', 'gender', 'dob', 'address']);
+  });
+
+  test('collector skips records with only non-Riverbend identifier when skip rate is under 0.5%', async () => {
+    const mixed: FetchPage = async (facility, page) => {
+      if (facility === 'SAM') {
+        return { data: [], meta: { total: 0, page: 1, nextPage: null } };
+      }
+      const data = Array.from({ length: 200 }, (_, i) => {
+        if (i === 0) {
+          return {
+            identifier: [{ system: 'urn:stansgar:mrn', value: 'sg-only' }],
+            given: ['Only'],
+            family: 'Stansgar',
+            gender: 'F',
+            dob: '01/01/1990',
+            phone: '000-000-0000',
+            email: null,
+            address: { line1: '1 Test St', city: 'Test', state: 'TN', zip: '37040' },
+          };
+        }
+        return {
+          identifier: [{ system: 'urn:riverbend:mrn', value: `p${i}` }],
+          given: ['Test'],
+          family: 'User',
+          gender: 'F',
+          dob: '01/01/1990',
+          phone: '000-000-0000',
+          email: null,
+          address: { line1: '1 Test St', city: 'Test', state: 'TN', zip: '37040' },
+        };
+      });
+      return { data, meta: { total: 200, page: 1, nextPage: null } };
+    };
+
+    const { path: snapPath } = await collectDemographics(mixed, {
+      runId: 'test_run_stansgar_skip',
+      asOf: '2026-08-01',
+    });
+    const snap = JSON.parse(fs.readFileSync(snapPath, 'utf8'));
+    expect(snap.facilities[0].records).toHaveLength(199);
+  });
+
+  test('snapshot JSON contains no ssn, given, family, or v2 name strings after identifier mapping', async () => {
+    const { path: snapPath } = await collectDemographics(fixtureFetch(), {
+      runId: 'test_run_privacy',
+      asOf: '2026-08-01',
+    });
+    const blob = fs.readFileSync(snapPath, 'utf8');
+    expect(blob).not.toMatch(/ssn|given|family|Williams|Sarah|678-90-1234/i);
   });
 });

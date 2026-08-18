@@ -52,7 +52,7 @@ describe('aggregation golden numbers', () => {
     ]);
     const csv = fs.readFileSync(path.join(tmp, 'exports', `panel_monthly_${runId}.csv`), 'utf8');
     expect(csv).toContain('golden_20260801');
-    expect(csv).not.toMatch(/patientId|ssn|phone|name/i);
+    expect(csv).not.toMatch(/patientId|ssn|phone|name|given|family|Williams|Sarah/i);
   });
 
   test('cohort_agesex golden counts as of 2026-08-01', () => {
@@ -93,7 +93,7 @@ describe('aggregation golden numbers', () => {
     expect(rvbTotal).toBe(12);
     expect(samTotal).toBe(3);
     // no patientId in extract rows
-    expect(JSON.stringify(rows)).not.toMatch(/patientId|200104|ssn/i);
+    expect(JSON.stringify(rows)).not.toMatch(/patientId|200104|ssn|given|family|Williams|Sarah/i);
   });
 
   test('aggregation never needs live PIS — snapshot file alone is enough', () => {
