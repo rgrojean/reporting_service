@@ -51,7 +51,7 @@ export async function collectDemographics(
     const pct = ((missingPick / totalSeen) * 100).toFixed(2);
     throw new Error(
       `Missing-field guard: ${missingPick}/${totalSeen} records (${pct}%) missing a picked field ` +
-        `(patientId|gender|dob|address.zip) — exceeds 0.5% threshold. Aborting run.`
+        `(urn:riverbend:mrn|gender|dob|address.zip) — exceeds 0.5% threshold. Aborting run.`
     );
   }
 

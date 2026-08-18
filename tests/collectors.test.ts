@@ -72,7 +72,9 @@ describe('collectors/demographics', () => {
       }
       // 100 records, 1 missing dob → 1% > 0.5%
       const data = Array.from({ length: 100 }, (_, i) => ({
-        patientId: `p${i}`,
+        identifier: [{ system: 'urn:riverbend:mrn', value: `p${i}` }],
+        given: ['Test'],
+        family: 'Patient',
         gender: 'F',
         dob: i === 0 ? undefined : '01/01/1990',
         address: { zip: '37040' },
@@ -94,5 +96,123 @@ describe('collectors/demographics', () => {
       dob: '09/28/1987',
       address: { zip: '37040' },
     });
+  });
+
+  test('pick_maps_urn_riverbend_mrn_identifier_to_snapshot_patientId', () => {
+    const raw = {
+      identifier: [{ system: 'urn:riverbend:mrn', value: '200104' }],
+      given: ['Sarah'],
+      family: 'Williams',
+      gender: 'F',
+      dob: '09/28/1987',
+      address: { zip: '37040' },
+    };
+    expect(pick(raw)).toMatchObject({ patientId: '200104' });
+  });
+
+  test('pick returns null when identifier lacks urn:riverbend:mrn', () => {
+    const raw = {
+      identifier: [{ system: 'urn:stansgar:mrn', value: 'STANS-1' }],
+      given: ['Henry'],
+      family: 'Brooks',
+      gender: 'M',
+      dob: '07/04/1955',
+      address: { zip: '37043' },
+    };
+    expect(pick(raw)).toBeNull();
+  });
+
+  test('pick_still_drops_given_and_family', async () => {
+    const fetchOne: FetchPage = async () => ({
+      data: [
+        {
+          identifier: [{ system: 'urn:riverbend:mrn', value: '200104' }],
+          given: ['Sarah'],
+          family: 'Williams',
+          gender: 'F',
+          dob: '09/28/1987',
+          address: { zip: '37040' },
+        },
+      ],
+      meta: { total: 1, page: 1, nextPage: null },
+    });
+    const samEmpty: FetchPage = async () => ({
+      data: [],
+      meta: { total: 0, page: 1, nextPage: null },
+    });
+    const both: FetchPage = async (facility, page) => {
+      if (facility === 'SAM') return samEmpty(facility, page);
+      return fetchOne(facility, page);
+    };
+    const { path: snapPath } = await collectDemographics(both, {
+      runId: 'test_run_names_dropped',
+      asOf: '2026-08-01',
+    });
+    const blob = fs.readFileSync(snapPath, 'utf8');
+    expect(blob).not.toMatch(/Williams|Sarah/i);
+  });
+
+  test('collect_skips_record_with_only_non_primary_identifier_system', async () => {
+    const data = Array.from({ length: 1000 }, (_, i) => {
+      if (i === 999) {
+        return {
+          identifier: [{ system: 'urn:stansgar:mrn', value: 'STANS-1' }],
+          given: ['Skip'],
+          family: 'Me',
+          gender: 'F',
+          dob: '01/01/1990',
+          address: { zip: '37040' },
+        };
+      }
+      return {
+        identifier: [{ system: 'urn:riverbend:mrn', value: `rb${i}` }],
+        given: ['Test'],
+        family: 'Patient',
+        gender: 'F',
+        dob: '01/01/1990',
+        address: { zip: '37040' },
+      };
+    });
+    const rvbOnly: FetchPage = async (facility, page) => {
+      if (facility === 'SAM') {
+        return { data: [], meta: { total: 0, page: 1, nextPage: null } };
+      }
+      return { data, meta: { total: 1000, page: 1, nextPage: null } };
+    };
+    const { path: snapPath } = await collectDemographics(rvbOnly, {
+      runId: 'test_run_skip_stansgar',
+      asOf: '2026-08-01',
+    });
+    const snap = JSON.parse(fs.readFileSync(snapPath, 'utf8'));
+    expect(snap.facilities[0].records).toHaveLength(999);
+    expect(snap.facilities[0].records.map((r: { patientId: string }) => r.patientId)).not.toContain(
+      'STANS-1'
+    );
+  });
+
+  test('missing_field_guard_trips_when_riverbend_identifier_system_absent_above_threshold', async () => {
+    const data = Array.from({ length: 100 }, (_, i) => {
+      const identifier =
+        i === 0
+          ? [{ system: 'urn:stansgar:mrn', value: 'STANS-ONLY' }]
+          : [{ system: 'urn:riverbend:mrn', value: `rb${i}` }];
+      return {
+        identifier,
+        given: ['Test'],
+        family: 'Patient',
+        gender: 'F',
+        dob: '01/01/1990',
+        address: { zip: '37040' },
+      };
+    });
+    const bad: FetchPage = async (facility, page) => {
+      if (facility === 'SAM') {
+        return { data: [], meta: { total: 0, page: 1, nextPage: null } };
+      }
+      return { data, meta: { total: 100, page: 1, nextPage: null } };
+    };
+    await expect(
+      collectDemographics(bad, { runId: 'test_run_no_riverbend', asOf: '2026-08-01' })
+    ).rejects.toThrow(/Missing-field guard/);
   });
 });

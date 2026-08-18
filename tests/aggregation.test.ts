@@ -101,4 +101,21 @@ describe('aggregation golden numbers', () => {
     const again = runPanel(snapPath, dbPath);
     expect(again.rows[0].panel_size).toBe(12);
   });
+
+  test('v3_roster_fixtures_preserve_panel_and_cohort_golden_numbers', () => {
+    const { rows } = runPanel(snapPath, dbPath);
+    expect(rows).toEqual([
+      { facility: 'RVB', panel_size: 12, roster_count: 12 },
+      { facility: 'SAM', panel_size: 3, roster_count: 3 },
+    ]);
+    const { agesex, geo } = runCohorts(snapPath, dbPath);
+    const key = (r: { facility: string; age_band: string; gender: string }) =>
+      `${r.facility}|${r.age_band}|${r.gender}`;
+    const map = Object.fromEntries(agesex.map((r) => [key(r), r.n]));
+    expect(map['RVB|18-34|F']).toBe(2);
+    expect(map['RVB|65+|M']).toBe(2);
+    const geoMap = Object.fromEntries(geo.map((r) => [`${r.facility}|${r.zip3}`, r.n]));
+    expect(geoMap['RVB|370']).toBe(12);
+    expect(geoMap['SAM|372']).toBe(3);
+  });
 });
