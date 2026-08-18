@@ -1,11 +1,18 @@
 {
   "data": [
     {
-      "patientId": "300001",
-      "name": "Nguyen, Lan",
+      "identifier": [
+        {
+          "system": "urn:riverbend:mrn",
+          "value": "300001"
+        }
+      ],
+      "given": [
+        "Lan"
+      ],
+      "family": "Nguyen",
       "dob": "12/01/1990",
       "gender": "F",
-      "ssn": "333-44-5555",
       "phone": "615-555-0100",
       "email": "lnguyen@example.com",
       "address": {
@@ -16,11 +23,18 @@
       }
     },
     {
-      "patientId": "300002",
-      "name": "Kim, David",
+      "identifier": [
+        {
+          "system": "urn:riverbend:mrn",
+          "value": "300002"
+        }
+      ],
+      "given": [
+        "David"
+      ],
+      "family": "Kim",
       "dob": "03/20/1975",
       "gender": "M",
-      "ssn": "444-55-6666",
       "phone": "615-555-0101",
       "email": "dkim@example.com",
       "address": {
@@ -31,11 +45,18 @@
       }
     },
     {
-      "patientId": "300003",
-      "name": "Lopez, Ana",
+      "identifier": [
+        {
+          "system": "urn:riverbend:mrn",
+          "value": "300003"
+        }
+      ],
+      "given": [
+        "Ana"
+      ],
+      "family": "Lopez",
       "dob": "09/09/1952",
       "gender": "F",
-      "ssn": "555-66-7777",
       "phone": "615-555-0102",
       "email": null,
       "address": {
